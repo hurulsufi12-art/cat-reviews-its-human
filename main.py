@@ -17,17 +17,15 @@ TEXT = (
 MAX_CHARS = 200
 
 
-def main() -> int:
-    """Validate TEXT, then write it verbatim to $OUTPUT_DIR/entry.txt.
+def validate(text: str) -> str:
+    """Gate TEXT for the RULES check and return it unchanged.
 
-    Returns 0 on success. Raises ValueError (and writes nothing) when
-    TEXT fails the gate: 1-200 characters (counted as characters, not
+    Raises ValueError (and the caller writes nothing) when the text
+    fails the gate: 1-200 characters (counted as characters, not
     bytes), not whitespace-only, a single line, no leading/trailing
     whitespace, no control characters. Non-ASCII text within the
     character gate is accepted: the RULES gate counts characters.
     """
-    text = TEXT  # read the global live, at call time (tests patch it)
-
     if not isinstance(text, str):
         raise ValueError("TEXT must be a string")
     if not 1 <= len(text) <= MAX_CHARS:
@@ -42,6 +40,15 @@ def main() -> int:
         raise ValueError("TEXT must be a single line")
     if any(unicodedata.category(ch) == "Cc" or ch == "\x7f" for ch in text):
         raise ValueError("TEXT must not contain control characters")
+    return text
+
+
+def main() -> int:
+    """Validate TEXT, then write it verbatim to $OUTPUT_DIR/entry.txt.
+
+    Returns 0 on success.
+    """
+    text = validate(TEXT)  # read the global live, at call time (tests patch it)
 
     # Empty OUTPUT_DIR counts as unset (PLAN contract): fall back to /output.
     # os.environ.get("OUTPUT_DIR", "/output") alone would return "" and
